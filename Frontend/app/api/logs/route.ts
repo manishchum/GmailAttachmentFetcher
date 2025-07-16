@@ -12,12 +12,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // First, fetch the user's id from the users table using their email
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("email", session.user.email)
+      .single();
+
+    if (userError || !userData) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const { data, error } = await supabaseAdmin
       .from("logs")
       .select("*")
-      .eq("user_email", session.user.email)
+      .eq("user_id", userData.id)
       .order("created_at", { ascending: false })
-      .limit(50)
+      .limit(50);
 
     if (error) {
       console.error("Supabase error:", error)

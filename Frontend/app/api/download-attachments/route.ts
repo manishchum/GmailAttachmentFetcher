@@ -19,7 +19,7 @@ export async function POST() {
     // Get user's data including tokens from Supabase
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
-      .select("file_type, file_name_filter, date_from, gmail_folder, access_token, refresh_token, token_expires_at")
+      .select("id, file_type, file_name_filter, date_from, gmail_folder, access_token, refresh_token, token_expires_at")
       .eq("email", session.user.email)
       .single()
 
@@ -258,8 +258,8 @@ export async function POST() {
                 }
 
                 // Log the successful upload
-                await supabaseAdmin.from("logs").insert({
-                  user_email: session.user.email,
+                const { error } = await supabaseAdmin.from("logs").insert({
+                  user_id: userData.id, // or however you get the user's id
                   file_name: part.filename,
                   file_type: fileExtension,
                   status: "success",
@@ -269,6 +269,9 @@ export async function POST() {
                   gmail_folder: userData.gmail_folder,
                   gmail_folder_name: folderName,
                 })
+                if (error) {
+                  console.error("Supabase log insert error:", error)
+                }
 
                 downloadResults.push({
                   filename: part.filename,
@@ -280,8 +283,8 @@ export async function POST() {
                 console.error("Error downloading/uploading attachment:", attachmentError)
 
                 // Log the failed download
-                await supabaseAdmin.from("logs").insert({
-                  user_email: session.user.email,
+                const { error } = await supabaseAdmin.from("logs").insert({
+                  user_id: userData.id, // or however you get the user's id
                   file_name: part.filename,
                   file_type: fileExtension,
                   status: "failed",
@@ -289,6 +292,9 @@ export async function POST() {
                   gmail_folder: userData.gmail_folder,
                   gmail_folder_name: folderName,
                 })
+                if (error) {
+                  console.error("Supabase log insert error:", error)
+                }
 
                 downloadResults.push({
                   filename: part.filename,
@@ -310,7 +316,7 @@ export async function POST() {
     if (matchingAttachments.length > 0) {
       await supabaseAdmin.from("logs").insert(
         matchingAttachments.map(att => ({
-          user_email: session.user.email,
+          user_id: userData.id, // or however you get the user's id
           file_name: att.filename,
           file_type: att.fileType,
           status: "matched", // Use a new status to indicate pre-upload match

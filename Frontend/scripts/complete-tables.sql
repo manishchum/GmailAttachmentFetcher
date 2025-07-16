@@ -41,3 +41,11 @@ CREATE POLICY "Service role can do everything on users" ON users
 
 CREATE POLICY "Service role can do everything on logs" ON logs
   FOR ALL USING (true);
+
+ALTER TABLE public.logs
+  ADD COLUMN IF NOT EXISTS drive_file_id text,
+  ADD COLUMN IF NOT EXISTS drive_link text,
+  ADD COLUMN IF NOT EXISTS gmail_folder_name text,
+  ADD COLUMN IF NOT EXISTS message_id text,
+  ADD COLUMN IF NOT EXISTS size integer,
+  ADD COLUMN IF NOT EXISTS note text;

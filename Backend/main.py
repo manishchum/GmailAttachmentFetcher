@@ -16,7 +16,8 @@ app.include_router(app_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, set this to your frontend's URL
+    allow_origins=["https://fetchfloww.vercel.app/",
+                   "https://fetchfloww.workfloww.ai"],  # In production, set this to your frontend's URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

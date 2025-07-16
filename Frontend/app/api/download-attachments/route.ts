@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { supabaseAdmin } from "@/lib/supabase-admin"
 import { google } from "googleapis"
 import { Readable } from "stream";
+export { dynamic } from "@/lib/dynamic";
 
 export async function POST() {
   try {

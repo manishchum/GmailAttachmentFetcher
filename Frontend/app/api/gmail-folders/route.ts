@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { supabaseAdmin } from "@/lib/supabase-admin"
 import { google } from "googleapis"
+export { dynamic } from "@/lib/dynamic";
 
 export async function GET() {
   try {

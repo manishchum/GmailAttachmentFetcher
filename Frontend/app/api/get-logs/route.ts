@@ -1,6 +1,7 @@
 // app/api/get-logs/route.ts
 
 import { NextResponse } from "next/server";
+export { dynamic } from "@/lib/dynamic";
 
 export async function GET(request: Request) {
   const userEmail = "user@example.com"; // Replace with actual user email or get from session

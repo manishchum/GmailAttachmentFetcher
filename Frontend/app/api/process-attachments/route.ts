@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+export { dynamic } from "@/lib/dynamic";
 
 export async function POST(request: Request) {
   // You can get these from the request body, session, or hardcode for testing

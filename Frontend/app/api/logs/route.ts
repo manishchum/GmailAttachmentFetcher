@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { supabaseAdmin } from "@/lib/supabase-admin"
+export { dynamic } from "@/lib/dynamic";
 
 export async function GET(request: NextRequest) {
   try {

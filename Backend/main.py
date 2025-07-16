@@ -6,6 +6,10 @@ from app.routes import router as app_router
 
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"message": "Backend is up and running"}
+
 app.include_router(auth_router)
 app.include_router(attachments_router)
 app.include_router(app_router)

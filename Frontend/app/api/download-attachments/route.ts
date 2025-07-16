@@ -257,9 +257,9 @@ export async function POST() {
                   throw new Error("Drive upload failed for " + part.filename);
                 }
 
-                // Log the successful upload
+                // On successful upload
                 const { error } = await supabaseAdmin.from("logs").insert({
-                  user_id: userData.id, // or however you get the user's id
+                  user_id: userData.id,
                   file_name: part.filename,
                   file_type: fileExtension,
                   status: "success",
@@ -268,7 +268,10 @@ export async function POST() {
                   search_query: searchQuery,
                   gmail_folder: userData.gmail_folder,
                   gmail_folder_name: folderName,
-                })
+                  message_id: message.id,
+                  size: part.body.size,
+                  note: "Uploaded to Drive successfully"
+                });
                 if (error) {
                   console.error("Supabase log insert error:", error)
                 }
@@ -282,16 +285,19 @@ export async function POST() {
               } catch (attachmentError) {
                 console.error("Error downloading/uploading attachment:", attachmentError)
 
-                // Log the failed download
+                // On upload failure (inside the catch block for upload)
                 const { error } = await supabaseAdmin.from("logs").insert({
-                  user_id: userData.id, // or however you get the user's id
+                  user_id: userData.id,
                   file_name: part.filename,
                   file_type: fileExtension,
                   status: "failed",
                   search_query: searchQuery,
                   gmail_folder: userData.gmail_folder,
                   gmail_folder_name: folderName,
-                })
+                  message_id: message.id,
+                  size: part.body.size,
+                  note: "Found but upload failed"
+                });
                 if (error) {
                   console.error("Supabase log insert error:", error)
                 }
@@ -312,22 +318,22 @@ export async function POST() {
     // Log to console for debugging
     console.log("Matching attachments before upload:", matchingAttachments);
 
-    // Log to Supabase logs table (optional, for traceability)
-    if (matchingAttachments.length > 0) {
-      await supabaseAdmin.from("logs").insert(
-        matchingAttachments.map(att => ({
-          user_id: userData.id, // or however you get the user's id
-          file_name: att.filename,
-          file_type: att.fileType,
-          status: "matched", // Use a new status to indicate pre-upload match
-          search_query: att.searchQuery,
-          gmail_folder: att.gmailFolder,
-          message_id: att.messageId,
-          size: att.size,
-          note: "Matched by filters, before upload"
-        }))
-      );
-    }
+    // // Log to Supabase logs table (optional, for traceability)
+    // if (matchingAttachments.length > 0) {
+    //   await supabaseAdmin.from("logs").insert(
+    //     matchingAttachments.map(att => ({
+    //       user_id: userData.id, // or however you get the user's id
+    //       file_name: att.filename,
+    //       file_type: att.fileType,
+    //       status: "matched", // Use a new status to indicate pre-upload match
+    //       search_query: att.searchQuery,
+    //       gmail_folder: att.gmailFolder,
+    //       message_id: att.messageId,
+    //       size: att.size,
+    //       note: "Matched by filters, before upload"
+    //     }))
+    //   );
+    // }
 
     return NextResponse.json({
       success: true,

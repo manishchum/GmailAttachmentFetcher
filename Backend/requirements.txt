@@ -3,3 +3,12 @@ uvicorn
 python-dotenv
 requests
 supabase
+fastapi
+uvicorn
+google-api-python-client
+google-auth
+google-auth-oauthlib
+httpx
+python-dotenv
+requests
+pydantic

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Calendar, Folder, RefreshCw } from "lucide-react"
+import { Loader2, Calendar, Folder, RefreshCw, HardDrive, Plus } from "lucide-react"
 
 const FILE_TYPES = [
   { value: "pdf", label: "PDF Documents (.pdf)" },
@@ -30,15 +30,27 @@ interface GmailFolder {
   threadsUnread: number
 }
 
+interface DriveFolder {
+  id: string
+  name: string
+  parents?: string[]
+  createdTime: string
+  modifiedTime: string
+}
+
 export function FileTypeSelector() {
   const [selectedFileType, setSelectedFileType] = useState<string>("")
   const [fileNameFilter, setFileNameFilter] = useState<string>("")
   const [dateFrom, setDateFrom] = useState<string>("")
   const [selectedFolder, setSelectedFolder] = useState<string>("")
+  const [selectedDriveFolder, setSelectedDriveFolder] = useState<string>("")
   const [gmailFolders, setGmailFolders] = useState<GmailFolder[]>([])
+  const [driveFolders, setDriveFolders] = useState<DriveFolder[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrefs, setIsLoadingPrefs] = useState(true)
   const [isLoadingFolders, setIsLoadingFolders] = useState(false)
+  const [isLoadingDriveFolders, setIsLoadingDriveFolders] = useState(false)
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const { toast } = useToast()
 
   // Set default date to 30 days ago
@@ -68,10 +80,13 @@ export function FileTypeSelector() {
           if (data?.gmail_folder) {
             setSelectedFolder(data.gmail_folder)
           }
+          if (data?.drive_folder_id) {
+            setSelectedDriveFolder(data.drive_folder_id)
+          }
         }
 
-        // Load Gmail folders
-        await loadGmailFolders()
+        // Load Gmail folders and Drive folders
+        await Promise.all([loadGmailFolders(), loadDriveFolders()])
       } catch (error) {
         console.error("Failed to load data:", error)
       } finally {
@@ -109,6 +124,70 @@ export function FileTypeSelector() {
     }
   }
 
+  const loadDriveFolders = async () => {
+    setIsLoadingDriveFolders(true)
+    try {
+      const response = await fetch("/api/drive-folders")
+      if (response.ok) {
+        const { folders } = await response.json()
+        setDriveFolders(folders || [])
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Failed to load Drive folders",
+          description: error.error || "Please check your connection and try again",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to load Drive folders:", error)
+      toast({
+        title: "Error loading Drive folders",
+        description: "Failed to fetch Google Drive folders. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingDriveFolders(false)
+    }
+  }
+
+  const createGmailAttachmentsFolder = async () => {
+    setIsCreatingFolder(true)
+    try {
+      const response = await fetch("/api/create-drive-folder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          folderName: "Gmail Attachments",
+        }),
+      })
+
+      if (response.ok) {
+        const { folder } = await response.json()
+        setSelectedDriveFolder(folder.id)
+        await loadDriveFolders() // Refresh the list
+        toast({
+          title: "Folder Created!",
+          description: `Created "Gmail Attachments" folder in your Google Drive`,
+        })
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to create folder")
+      }
+    } catch (error) {
+      console.error("Failed to create Drive folder:", error)
+      toast({
+        title: "Error creating folder",
+        description: error instanceof Error ? error.message : "Failed to create Drive folder",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreatingFolder(false)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!selectedFileType) {
       toast({
@@ -137,6 +216,15 @@ export function FileTypeSelector() {
       return
     }
 
+    if (!selectedDriveFolder) {
+      toast({
+        title: "Error",
+        description: "Please select a Google Drive folder",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -150,6 +238,7 @@ export function FileTypeSelector() {
           fileNameFilter: fileNameFilter.trim(),
           dateFrom: dateFrom,
           gmailFolder: selectedFolder,
+          driveFolderId: selectedDriveFolder,
         }),
       })
 
@@ -189,12 +278,13 @@ export function FileTypeSelector() {
   }
 
   const selectedFolderInfo = gmailFolders.find((folder) => folder.id === selectedFolder)
+  const selectedDriveFolderInfo = driveFolders.find((folder) => folder.id === selectedDriveFolder)
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Download Preferences</CardTitle>
-        <CardDescription>Configure what files to download from your Gmail</CardDescription>
+        <CardDescription>Configure what files to download from Gmail and where to store them in Drive</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -267,6 +357,63 @@ export function FileTypeSelector() {
         </div>
 
         <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="drive-folder">Google Drive Destination</Label>
+            <div className="flex gap-2">
+              {/* <Button
+                variant="ghost"
+                size="sm"
+                onClick={createGmailAttachmentsFolder}
+                disabled={isCreatingFolder}
+                className="h-6 px-2"
+              >
+                {isCreatingFolder ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+              </Button> */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadDriveFolders}
+                disabled={isLoadingDriveFolders}
+                className="h-6 px-2"
+              >
+                {isLoadingDriveFolders ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+          </div>
+          <Select value={selectedDriveFolder} onValueChange={setSelectedDriveFolder} disabled={isLoadingDriveFolders}>
+            <SelectTrigger>
+              <SelectValue placeholder={isLoadingDriveFolders ? "Loading Drive folders..." : "Select a Drive folder"} />
+            </SelectTrigger>
+            <SelectContent>
+              {driveFolders.map((folder) => (
+                <SelectItem key={folder.id} value={folder.id}>
+                  <div className="flex items-center space-x-2">
+                    <HardDrive className="h-4 w-4" />
+                    <span>{folder.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(folder.modifiedTime).toLocaleDateString()}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedDriveFolderInfo && (
+            <p className="text-xs text-muted-foreground">
+              Selected: {selectedDriveFolderInfo.name} - Last modified:{" "}
+              {new Date(selectedDriveFolderInfo.modifiedTime).toLocaleDateString()}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            💡 Tip: Click the + button to create a new "Gmail Attachments" folder
+          </p>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="file-name-filter">File Name Filter (Optional)</Label>
           <Input
             id="file-name-filter"
@@ -276,14 +423,14 @@ export function FileTypeSelector() {
             onChange={(e) => setFileNameFilter(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Only files containing these keywords in their name will be downloaded. Leave empty to download all files of the selected type.
-            Separate multiple keywords with a space (e.g., invoice report 2024).
+            Only files containing these keywords in their name will be downloaded. Leave empty to download all files of
+            the selected type.
           </p>
         </div>
 
         <Button
           onClick={handleSubmit}
-          disabled={isLoading || !selectedFileType || !dateFrom || !selectedFolder}
+          disabled={isLoading || !selectedFileType || !dateFrom || !selectedFolder || !selectedDriveFolder}
           className="w-full"
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -294,6 +441,7 @@ export function FileTypeSelector() {
           <p className="font-medium mb-1">Current Settings:</p>
           <p>• File Type: {selectedFileType ? FILE_TYPES.find((t) => t.value === selectedFileType)?.label : "None"}</p>
           <p>• Gmail Folder: {selectedFolderInfo?.name || "None"}</p>
+          <p>• Drive Folder: {selectedDriveFolderInfo?.name || "None"}</p>
           <p>• Date Range: {dateFrom ? `From ${new Date(dateFrom).toLocaleDateString()}` : "Not set"} to Today</p>
           <p>• Name Filter: {fileNameFilter || "None (all files)"}</p>
         </div>

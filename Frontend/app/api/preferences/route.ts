@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { supabaseAdmin } from "@/lib/supabase-admin"
-export { dynamic } from "@/lib/dynamic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { fileType, fileNameFilter, dateFrom, gmailFolder } = await request.json()
+    const { fileType, fileNameFilter, dateFrom, gmailFolder, driveFolderId } = await request.json()
 
     if (!fileType) {
       return NextResponse.json({ error: "File type is required" }, { status: 400 })
@@ -26,6 +25,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gmail folder is required" }, { status: 400 })
     }
 
+    if (!driveFolderId) {
+      return NextResponse.json({ error: "Google Drive folder is required" }, { status: 400 })
+    }
+
     // Update user preferences (preserve existing tokens)
     const { data, error } = await supabaseAdmin.from("users").upsert(
       {
@@ -34,6 +37,7 @@ export async function POST(request: NextRequest) {
         file_name_filter: fileNameFilter || null,
         date_from: dateFrom,
         gmail_folder: gmailFolder,
+        drive_folder_id: driveFolderId,
         updated_at: new Date().toISOString(),
       },
       {
@@ -64,7 +68,7 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from("users")
-      .select("file_type, file_name_filter, date_from, gmail_folder, created_at, updated_at")
+      .select("file_type, file_name_filter, date_from, gmail_folder, drive_folder_id, created_at, updated_at")
       .eq("email", session.user.email)
       .single()
 

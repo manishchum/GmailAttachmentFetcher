@@ -6,22 +6,28 @@ import { google } from "googleapis"
 import { Readable } from "stream";
 export { dynamic } from "@/lib/dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
     }
 
-    console.log("Fetching user data for:", session.user.email)
+    // 1. Get session
+    const session = await getServerSession(authOptions);
 
-    // Get user's data including tokens from Supabase
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Fetch userData from Supabase (include drive_folder_id in select)
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, file_type, file_name_filter, date_from, gmail_folder, access_token, refresh_token, token_expires_at")
+      .select("id, file_type, file_name_filter, date_from, gmail_folder, access_token, refresh_token, token_expires_at, drive_folder_id")
       .eq("email", session.user.email)
-      .single()
+      .single();
 
     if (userError) {
       console.error("User fetch error:", userError)
@@ -31,6 +37,11 @@ export async function POST() {
     if (!userData) {
       return NextResponse.json({ error: "User data not found. Please sign in again." }, { status: 400 })
     }
+
+    // 3. Now set driveFolderId
+    const driveFolderId = body.drive_folder_id || userData.drive_folder_id || null;
+
+    console.log("Fetching user data for:", session.user.email)
 
     console.log("User data:", {
       email: session.user.email,
@@ -152,21 +163,11 @@ export async function POST() {
 
     console.log(`Found ${messages.length} emails with attachments in folder: ${folderName}`)
 
-    // Create a folder in Google Drive for attachments
-    const driveFolderName = `Gmail Attachments - ${folderName} - ${new Date().toISOString().split("T")[0]} - ${
-      userData.file_type
-    }${userData.file_name_filter ? ` (${userData.file_name_filter})` : ""}`
-    const folderMetadata = {
-      name: driveFolderName,
-      mimeType: "application/vnd.google-apps.folder",
+    // Remove the logic that creates a new folder. Only use the provided driveFolderId.
+    let folderId = driveFolderId;
+    if (!folderId) {
+      return NextResponse.json({ error: "No Google Drive folder selected. Please select a folder and try again." }, { status: 400 });
     }
-
-    const folder = await drive.files.create({
-      requestBody: folderMetadata,
-      fields: "id",
-    })
-
-    const folderId = folder.data.id
 
     // Add this before the upload loop
     const matchingAttachments = [];
@@ -236,7 +237,7 @@ export async function POST() {
 
                 const fileMetadata = {
                   name: part.filename,
-                  parents: [folderId!],
+                  parents: [folderId],
                 }
 
                 const stream = Readable.from(buffer);
@@ -340,18 +341,19 @@ export async function POST() {
       emailCount: messages.length,
       attachmentCount,
       downloads: downloadResults,
-      folderName: driveFolderName,
+      folderName: folderName,
       gmailFolder: folderName,
       searchQuery,
       dateRange: `From ${fromDate.toLocaleDateString()} to ${new Date().toLocaleDateString()}`,
       nameFilter: userData.file_name_filter || "None",
       message: `Processed ${messages.length} emails from "${folderName}" and uploaded ${attachmentCount} matching attachments to Google Drive`,
-    })
+    });
   } catch (error) {
-    console.error("Download error:", error)
-    return NextResponse.json({ error: "Failed to download attachments. Please try again." }, { status: 500 })
+    console.error("Download error:", error);
+    return NextResponse.json({ error: "Failed to download attachments. Please try again." }, { status: 500 });
   }
 }
+
 
 // Helper function to refresh user token
 async function refreshUserToken(email: string, refreshToken: string) {

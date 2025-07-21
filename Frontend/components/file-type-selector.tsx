@@ -408,9 +408,9 @@ export function FileTypeSelector() {
               {new Date(selectedDriveFolderInfo.modifiedTime).toLocaleDateString()}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
+          {/* <p className="text-xs text-muted-foreground">
             💡 Tip: Click the + button to create a new "Gmail Attachments" folder
-          </p>
+          </p> */}
         </div>
 
         <div className="space-y-2">

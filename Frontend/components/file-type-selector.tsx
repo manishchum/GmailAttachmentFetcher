@@ -462,8 +462,7 @@ export function FileTypeSelector({
             onChange={(e) => setFileNameFilter(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Only files containing these keywords in their name will be downloaded. Leave empty to download all files of
-            the selected type.
+            Only files containing any of the keywords in their name will be downloaded. Separate keywords with spaces (e.g., invoice receipt bill). Leave empty to download all files of the selected type.
           </p>
         </div>
 

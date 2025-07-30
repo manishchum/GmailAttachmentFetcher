@@ -23,12 +23,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { data, error } = await supabaseAdmin
+    // Get date_to from query params
+    const { searchParams } = new URL(request.url)
+    const dateTo = searchParams.get("date_to")
+
+    let query = supabaseAdmin
       .from("logs")
       .select("*")
       .eq("user_id", userData.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
+
+    if (dateTo) {
+      // Only include logs with created_at <= dateTo (end of day)
+      const dateToEnd = dateTo + "T23:59:59.999Z"
+      query = query.lte("created_at", dateToEnd)
+    }
+
+    query = query.order("created_at", { ascending: false }).limit(50)
+
+    const { data, error } = await query
 
     if (error) {
       console.error("Supabase error:", error)
@@ -41,3 +53,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+

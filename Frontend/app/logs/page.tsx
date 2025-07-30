@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { LogsTable } from "@/components/logs-table"
@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react"
 export default function LogsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [dateTo, setDateTo] = useState(() => new Date().toISOString().split("T")[0])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -50,8 +51,9 @@ export default function LogsPage() {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <h1 className="text-lg font-semibold">Download Logs</h1>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <LogsTable userEmail={session?.user?.email || ""} />
+        <div className="flex flex-1 flex-col gap-4 p-4 mb-7">
+          {/* Add a date picker for dateTo if you want UI control */}
+          <LogsTable userEmail={session?.user?.email || ""} dateTo={dateTo} />
         </div>
       </SidebarInset>
     </>

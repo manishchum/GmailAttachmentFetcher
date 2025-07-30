@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { fileType, fileNameFilter, dateFrom, gmailFolder, driveFolderId } = await request.json()
+    const { fileType, fileNameFilter, dateFrom, dateTo, gmailFolder, driveFolderId } = await request.json()
 
     if (!fileType) {
       return NextResponse.json({ error: "File type is required" }, { status: 400 })
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
         file_type: fileType,
         file_name_filter: fileNameFilter || null,
         date_from: dateFrom,
+        date_to: dateTo,
         gmail_folder: gmailFolder,
         drive_folder_id: driveFolderId,
         updated_at: new Date().toISOString(),
@@ -68,7 +69,7 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from("users")
-      .select("file_type, file_name_filter, date_from, gmail_folder, drive_folder_id, created_at, updated_at")
+      .select("file_type, file_name_filter, date_from, date_to, gmail_folder, drive_folder_id, created_at, updated_at")
       .eq("email", session.user.email)
       .single()
 

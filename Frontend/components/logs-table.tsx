@@ -22,9 +22,10 @@ interface Log {
 
 interface LogsTableProps {
   userEmail: string
+  dateTo: string
 }
 
-export function LogsTable({ userEmail }: LogsTableProps) {
+export function LogsTable({ userEmail, dateTo }: LogsTableProps) {
   const [logs, setLogs] = useState<Log[]>([])
   const [filteredLogs, setFilteredLogs] = useState<Log[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -33,7 +34,7 @@ export function LogsTable({ userEmail }: LogsTableProps) {
   const refreshLogs = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/logs")
+      const response = await fetch(`/api/logs?date_to=${dateTo}`)
       if (response.ok) {
         const { data } = await response.json()
         setLogs(data || [])
@@ -49,7 +50,7 @@ export function LogsTable({ userEmail }: LogsTableProps) {
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const response = await fetch("/api/logs")
+        const response = await fetch(`/api/logs?date_to=${dateTo}`)
         if (response.ok) {
           const { data } = await response.json()
           setLogs(data || [])
@@ -61,9 +62,8 @@ export function LogsTable({ userEmail }: LogsTableProps) {
         setIsLoading(false)
       }
     }
-
     fetchLogs()
-  }, [userEmail])
+  }, [userEmail, dateTo])
 
   useEffect(() => {
     if (searchTerm) {

@@ -42,6 +42,7 @@ export default function HomePage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
+          <img src="/Logo.png" alt="FetchFloww Logo" className="mx-auto h-25 mb-3" />
           <h1 className="text-4xl font-bold text-gray-900 mb-2">FetchFloww</h1>
           <p className="text-gray-600 mb-8">Automatically download Gmail attachments by file type</p>
         </div>

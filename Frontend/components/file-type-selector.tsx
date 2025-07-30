@@ -38,12 +38,35 @@ interface DriveFolder {
   modifiedTime: string
 }
 
-export function FileTypeSelector() {
-  const [selectedFileType, setSelectedFileType] = useState<string>("")
-  const [fileNameFilter, setFileNameFilter] = useState<string>("")
-  const [dateFrom, setDateFrom] = useState<string>("")
-  const [selectedFolder, setSelectedFolder] = useState<string>("")
-  const [selectedDriveFolder, setSelectedDriveFolder] = useState<string>("")
+interface FileTypeSelectorProps {
+  selectedFileType: string;
+  setSelectedFileType: (val: string) => void;
+  fileNameFilter: string;
+  setFileNameFilter: (val: string) => void;
+  dateFrom: string;
+  setDateFrom: (val: string) => void;
+  dateTo: string;
+  setDateTo: (val: string) => void;
+  selectedFolder: string;
+  setSelectedFolder: (val: string) => void;
+  selectedDriveFolder: string;
+  setSelectedDriveFolder: (val: string) => void;
+}
+
+export function FileTypeSelector({
+  selectedFileType,
+  setSelectedFileType,
+  fileNameFilter,
+  setFileNameFilter,
+  dateFrom,
+  setDateFrom,
+  dateTo,
+  setDateTo,
+  selectedFolder,
+  setSelectedFolder,
+  selectedDriveFolder,
+  setSelectedDriveFolder,
+}: FileTypeSelectorProps) {
   const [gmailFolders, setGmailFolders] = useState<GmailFolder[]>([])
   const [driveFolders, setDriveFolders] = useState<DriveFolder[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -237,6 +260,7 @@ export function FileTypeSelector() {
           fileType: selectedFileType,
           fileNameFilter: fileNameFilter.trim(),
           dateFrom: dateFrom,
+          dateTo: dateTo, // <-- Add this line
           gmailFolder: selectedFolder,
           driveFolderId: selectedDriveFolder,
         }),
@@ -304,6 +328,7 @@ export function FileTypeSelector() {
             </Select>
           </div>
 
+
           <div className="space-y-2">
             <Label htmlFor="date-from">Download From Date</Label>
             <div className="relative">
@@ -314,7 +339,21 @@ export function FileTypeSelector() {
                 onChange={(e) => setDateFrom(e.target.value)}
                 max={new Date().toISOString().split("T")[0]}
               />
-              <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              {/* <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" /> */}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date-to">Download To Date</Label>
+            <div className="relative">
+              <Input
+                id="date-to"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                min={dateFrom}
+                max={new Date().toISOString().split("T")[0]}
+              />
+              {/* <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" /> */}
             </div>
           </div>
         </div>
@@ -442,7 +481,7 @@ export function FileTypeSelector() {
           <p>• File Type: {selectedFileType ? FILE_TYPES.find((t) => t.value === selectedFileType)?.label : "None"}</p>
           <p>• Gmail Folder: {selectedFolderInfo?.name || "None"}</p>
           <p>• Drive Folder: {selectedDriveFolderInfo?.name || "None"}</p>
-          <p>• Date Range: {dateFrom ? `From ${new Date(dateFrom).toLocaleDateString()}` : "Not set"} to Today</p>
+          <p>• Date Range: {dateFrom ? `From ${new Date(dateFrom).toLocaleDateString()}` : "Not set"} {dateTo ? `To ${new Date(dateTo).toLocaleDateString()}` : "Not set"}</p>
           <p>• Name Filter: {fileNameFilter || "None (all files)"}</p>
         </div>
       </CardContent>

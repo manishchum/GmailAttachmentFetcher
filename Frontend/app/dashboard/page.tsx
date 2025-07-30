@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { FileTypeSelector } from "@/components/file-type-selector"
@@ -14,6 +14,17 @@ import { Loader2 } from "lucide-react"
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+
+  // LIFTED STATE
+  const [selectedFileType, setSelectedFileType] = useState<string>("")
+  const [fileNameFilter, setFileNameFilter] = useState<string>("")
+  const [dateFrom, setDateFrom] = useState<string>("")
+  const [dateTo, setDateTo] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
+  const [selectedFolder, setSelectedFolder] = useState<string>("")
+  const [selectedDriveFolder, setSelectedDriveFolder] = useState<string>("")
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -55,8 +66,28 @@ export default function DashboardPage() {
         <div className="flex flex-1 flex-col gap-4 p-4">
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
             <div className="md:col-span-2 space-y-4">
-              <FileTypeSelector />
-              <DownloadButton />
+              <FileTypeSelector
+                selectedFileType={selectedFileType}
+                setSelectedFileType={setSelectedFileType}
+                fileNameFilter={fileNameFilter}
+                setFileNameFilter={setFileNameFilter}
+                dateFrom={dateFrom}
+                setDateFrom={setDateFrom}
+                dateTo={dateTo}
+                setDateTo={setDateTo}
+                selectedFolder={selectedFolder}
+                setSelectedFolder={setSelectedFolder}
+                selectedDriveFolder={selectedDriveFolder}
+                setSelectedDriveFolder={setSelectedDriveFolder}
+              />
+              <DownloadButton
+                selectedDriveFolderId={selectedDriveFolder}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                fileNameFilter={fileNameFilter}
+                selectedFileType={selectedFileType}
+                selectedFolder={selectedFolder}
+              />
             </div>
             <div>
               <UserCard user={session?.user} />

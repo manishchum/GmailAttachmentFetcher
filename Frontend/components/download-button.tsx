@@ -6,7 +6,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast"
 import { Download, Loader2, RefreshCw, ExternalLink, Info, Folder, HardDrive } from "lucide-react"
 
-export function DownloadButton({ selectedDriveFolderId }: { selectedDriveFolderId: string }) {
+export function DownloadButton({
+  selectedDriveFolderId,
+  dateFrom,
+  dateTo,
+  fileNameFilter,
+  selectedFileType,
+  selectedFolder,
+}: {
+  selectedDriveFolderId: string,
+  dateFrom: string,
+  dateTo: string,
+  fileNameFilter?: string,
+  selectedFileType?: string,
+  selectedFolder?: string,
+}) {
   const [isDownloading, setIsDownloading] = useState(false)
   const [lastDownload, setLastDownload] = useState<{
     time: string
@@ -28,15 +42,23 @@ export function DownloadButton({ selectedDriveFolderId }: { selectedDriveFolderI
     setIsDownloading(true)
 
     try {
+      const payload = {
+        drive_folder_id: selectedDriveFolderId, // or selectedFolderId
+        date_from: dateFrom, // required, e.g., "2025-07-01"
+        date_to: dateTo || null, // optional, null if not set
+        file_name_filter: fileNameFilter,
+        file_type: selectedFileType,
+        gmail_folder: selectedFolder,
+      };
+
+      console.log("Payload being sent:", payload); // 🧪 Debug: See exactly what is sent
+
       const response = await fetch("/api/download-attachments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          drive_folder_id: selectedDriveFolderId, // <-- This must be the ID of the folder the user picked
-          // ...add any other fields if needed
-        }),
+        body: JSON.stringify(payload),
       })
 
       const result = await response.json()
@@ -82,7 +104,7 @@ export function DownloadButton({ selectedDriveFolderId }: { selectedDriveFolderI
           Download filtered attachments from Gmail and upload to your selected Google Drive folder
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 mb-5">
         <Button onClick={handleDownload} disabled={isDownloading} className="w-full" size="lg">
           {isDownloading ? (
             <>

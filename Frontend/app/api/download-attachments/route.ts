@@ -131,25 +131,40 @@ export async function POST(request: Request) {
     }
 
     // Build search query based on user preferences
-    const fromDate = new Date(userData.date_from)
-    const dateQuery = `after:${fromDate.getFullYear()}/${(fromDate.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${fromDate.getDate().toString().padStart(2, "0")}`
+    const fromDate = new Date(body.date_from);
+    const toDate = body.date_to ? new Date(body.date_to) : null;
 
-    // Search for emails with attachments in the specified folder
-    let searchQuery = `has:attachment ${dateQuery} label:${userData.gmail_folder}`
+    const formatDate = (date: Date) => {
+      return `${date.getFullYear()}/${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}/${date.getDate().toString().padStart(2, "0")}`;
+    };
 
-    // Add filename filter if provided
+    const afterQuery = `after:${formatDate(fromDate)}`;
+    let beforeQuery = "";
+
+    if (toDate) {
+      // Gmail's before: is exclusive, so add 1 day to include the full end date
+      toDate.setDate(toDate.getDate() + 1);
+      beforeQuery = ` before:${formatDate(toDate)}`;
+    }
+
+    const labelQuery = userData.gmail_folder ? ` label:${userData.gmail_folder}` : "";
+
+    let filenameQuery = "";
     if (userData.file_name_filter) {
-      const keywords = userData.file_name_filter.split(/\s+/).filter(Boolean)
+      const keywords = userData.file_name_filter.split(/\s+/).filter(Boolean);
       if (keywords.length > 0) {
-        // Add filename search terms
-        const filenameQuery = keywords.map((keyword: string) => `filename:${keyword}`).join(" OR ")
-        searchQuery += ` (${filenameQuery})`
+        const keywordPart: string = keywords.map((k: string) => `filename:${k}`).join(" OR ");
+        filenameQuery = ` (${keywordPart})`;
       }
     }
 
-    console.log("Gmail search query:", searchQuery)
+    const searchQuery = `has:attachment ${afterQuery}${beforeQuery}${labelQuery}${filenameQuery}`;
+    console.log("Final Gmail Query:", searchQuery);
+    console.log("Date From:", body.date_from);
+    console.log("Date To:", body.date_to);
+
 
     const messagesResponse = await gmail.users.messages.list({
       userId: "me",

@@ -9,9 +9,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Gmail Attachment Downloader",
-  description: "Automatically download Gmail attachments by file type",
-    generator: 'v0.dev'
+  title: "FetchFloww",
+  description: "Automatically download Gmail attachments by file type"
 }
 
 export default function RootLayout({
